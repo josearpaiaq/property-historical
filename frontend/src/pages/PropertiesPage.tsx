@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useProperties, useCreateProperty, useDeleteProperty } from '@/hooks/use-properties';
 
 export function PropertiesPage() {
+  const { t } = useTranslation();
   const { data: properties, isLoading } = useProperties();
   const createProperty = useCreateProperty();
   const deleteProperty = useDeleteProperty();
@@ -29,67 +31,68 @@ export function PropertiesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Properties</h1>
-          <p className="text-muted-foreground">Manage your property portfolio</p>
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-2xl md:text-3xl font-bold">{t('properties.title')}</h1>
+          <p className="text-muted-foreground text-sm hidden sm:block">{t('properties.subtitle')}</p>
         </div>
-        <Button onClick={() => setShowForm(!showForm)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Property
+        <Button onClick={() => setShowForm(!showForm)} size="sm" className="shrink-0">
+          <Plus className="h-4 w-4 mr-1 sm:mr-2" />
+          <span className="hidden sm:inline">{t('properties.addProperty')}</span>
+          <span className="sm:hidden">{t('properties.add')}</span>
         </Button>
       </div>
 
       {showForm && (
         <Card>
-          <CardHeader>
-            <CardTitle>New Property</CardTitle>
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg">{t('properties.newProperty')}</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleCreate} className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-3">
+              <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Name *</Label>
+                  <Label htmlFor="name">{t('properties.name')} *</Label>
                   <Input
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="My House"
+                    placeholder={t('properties.namePlaceholder')}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="address">Address</Label>
+                  <Label htmlFor="address">{t('properties.address')}</Label>
                   <Input
                     id="address"
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    placeholder="123 Main St"
+                    placeholder={t('properties.addressPlaceholder')}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="type">Type</Label>
+                  <Label htmlFor="type">{t('properties.type')}</Label>
                   <select
                     id="type"
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                     value={formData.type}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                   >
-                    <option value="">Select type</option>
-                    <option value="house">House</option>
-                    <option value="apartment">Apartment</option>
-                    <option value="land">Land</option>
-                    <option value="commercial">Commercial</option>
-                    <option value="other">Other</option>
+                    <option value="">{t('properties.selectType')}</option>
+                    <option value="house">{t('properties.types.house')}</option>
+                    <option value="apartment">{t('properties.types.apartment')}</option>
+                    <option value="land">{t('properties.types.land')}</option>
+                    <option value="commercial">{t('properties.types.commercial')}</option>
+                    <option value="other">{t('properties.types.other')}</option>
                   </select>
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button type="submit" disabled={createProperty.isPending}>
-                  {createProperty.isPending ? 'Creating...' : 'Create Property'}
+                <Button type="submit" size="sm" disabled={createProperty.isPending}>
+                  {createProperty.isPending ? t('common.creating') : t('common.create')}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
-                  Cancel
+                <Button type="button" variant="outline" size="sm" onClick={() => setShowForm(false)}>
+                  {t('common.cancel')}
                 </Button>
               </div>
             </form>
@@ -98,31 +101,31 @@ export function PropertiesPage() {
       )}
 
       {isLoading ? (
-        <p className="text-muted-foreground">Loading properties...</p>
+        <p className="text-muted-foreground">{t('common.loading')}</p>
       ) : properties?.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <p className="text-muted-foreground">No properties yet. Add your first one!</p>
+            <p className="text-muted-foreground">{t('properties.noProperties')}</p>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {properties?.map((property) => (
             <Card key={property.id} className="relative group">
               <Link to={`/properties/${property.id}`}>
-                <CardHeader>
-                  <CardTitle className="text-lg">{property.name}</CardTitle>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base md:text-lg pr-8">{property.name}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">{property.address || 'No address'}</p>
+                  <p className="text-sm text-muted-foreground">{property.address || t('properties.noAddress')}</p>
                   {property.type && (
-                    <span className="inline-block mt-2 px-2 py-1 text-xs bg-secondary rounded-md capitalize">
-                      {property.type}
+                    <span className="inline-block mt-2 px-2 py-1 text-xs bg-secondary rounded-md">
+                      {t(`properties.types.${property.type}`)}
                     </span>
                   )}
                   {property.purchaseDate && (
                     <p className="text-xs text-muted-foreground mt-2">
-                      Purchased: {new Date(property.purchaseDate).toLocaleDateString()}
+                      {t('properties.purchased')}: {new Date(property.purchaseDate).toLocaleDateString()}
                     </p>
                   )}
                 </CardContent>
