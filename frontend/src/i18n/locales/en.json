@@ -1,0 +1,103 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "properties": "Properties",
+    "logout": "Logout"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signingIn": "Signing in...",
+    "createAccount": "Create Account",
+    "creatingAccount": "Creating account...",
+    "email": "Email",
+    "password": "Password",
+    "name": "Name",
+    "emailPlaceholder": "you@example.com",
+    "passwordPlaceholder": "••••••••",
+    "passwordMinLength": "Min 6 characters",
+    "namePlaceholder": "John Doe",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "register": "Register",
+    "signInLink": "Sign In",
+    "invalidCredentials": "Invalid email or password",
+    "registrationFailed": "Registration failed. Email may already be in use.",
+    "manageProperties": "Sign in to manage your properties",
+    "startTracking": "Start tracking your property history"
+  },
+  "dashboard": {
+    "welcome": "Welcome back, {{name}}!",
+    "overview": "Here's an overview of your property portfolio.",
+    "totalProperties": "Total Properties",
+    "yourProperties": "Your Properties",
+    "noProperties": "No properties yet",
+    "addFirst": "Add your first property",
+    "manage": "Manage"
+  },
+  "properties": {
+    "title": "Properties",
+    "subtitle": "Manage your property portfolio",
+    "add": "Add",
+    "addProperty": "Add Property",
+    "newProperty": "New Property",
+    "name": "Name",
+    "namePlaceholder": "My House",
+    "address": "Address",
+    "addressPlaceholder": "123 Main St",
+    "type": "Type",
+    "selectType": "Select type",
+    "noAddress": "No address",
+    "noProperties": "No properties yet. Add your first one!",
+    "purchased": "Purchased",
+    "types": {
+      "house": "House",
+      "apartment": "Apartment",
+      "land": "Land",
+      "commercial": "Commercial",
+      "other": "Other"
+    }
+  },
+  "events": {
+    "timeline": "Event Timeline",
+    "logEvent": "Log Event",
+    "log": "Log",
+    "newEvent": "New Event",
+    "title": "Title",
+    "titlePlaceholder": "Fixed leaking faucet",
+    "date": "Date",
+    "cost": "Cost ($)",
+    "costPlaceholder": "150.00",
+    "category": "Category",
+    "status": "Status",
+    "description": "Description",
+    "descriptionPlaceholder": "Details about the repair or change...",
+    "noEvents": "No events logged yet",
+    "categories": {
+      "plumbing": "Plumbing",
+      "electrical": "Electrical",
+      "structural": "Structural",
+      "hvac": "HVAC",
+      "painting": "Painting",
+      "landscaping": "Landscaping",
+      "appliances": "Appliances",
+      "general": "General",
+      "other": "Other"
+    },
+    "statuses": {
+      "planned": "Planned",
+      "in-progress": "In Progress",
+      "completed": "Completed"
+    }
+  },
+  "common": {
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "create": "Create",
+    "creating": "Creating...",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading...",
+    "appName": "Property Historical"
+  }
+}

@@ -1,0 +1,103 @@
+{
+  "nav": {
+    "dashboard": "Inicio",
+    "properties": "Propiedades",
+    "logout": "Cerrar sesión"
+  },
+  "auth": {
+    "signIn": "Iniciar Sesión",
+    "signingIn": "Iniciando sesión...",
+    "createAccount": "Crear Cuenta",
+    "creatingAccount": "Creando cuenta...",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "name": "Nombre",
+    "emailPlaceholder": "tu@ejemplo.com",
+    "passwordPlaceholder": "••••••••",
+    "passwordMinLength": "Mínimo 6 caracteres",
+    "namePlaceholder": "Juan Pérez",
+    "noAccount": "¿No tienes cuenta?",
+    "hasAccount": "¿Ya tienes cuenta?",
+    "register": "Registrarse",
+    "signInLink": "Iniciar Sesión",
+    "invalidCredentials": "Correo o contraseña inválidos",
+    "registrationFailed": "Error al registrar. El correo puede estar en uso.",
+    "manageProperties": "Inicia sesión para gestionar tus propiedades",
+    "startTracking": "Empieza a registrar el historial de tus propiedades"
+  },
+  "dashboard": {
+    "welcome": "¡Bienvenido, {{name}}!",
+    "overview": "Aquí tienes un resumen de tu portafolio de propiedades.",
+    "totalProperties": "Total Propiedades",
+    "yourProperties": "Tus Propiedades",
+    "noProperties": "Aún no tienes propiedades",
+    "addFirst": "Agrega tu primera propiedad",
+    "manage": "Gestionar"
+  },
+  "properties": {
+    "title": "Propiedades",
+    "subtitle": "Gestiona tu portafolio de propiedades",
+    "add": "Agregar",
+    "addProperty": "Agregar Propiedad",
+    "newProperty": "Nueva Propiedad",
+    "name": "Nombre",
+    "namePlaceholder": "Mi Casa",
+    "address": "Dirección",
+    "addressPlaceholder": "Calle Principal 123",
+    "type": "Tipo",
+    "selectType": "Seleccionar tipo",
+    "noAddress": "Sin dirección",
+    "noProperties": "Aún no hay propiedades. ¡Agrega la primera!",
+    "purchased": "Comprada",
+    "types": {
+      "house": "Casa",
+      "apartment": "Apartamento",
+      "land": "Terreno",
+      "commercial": "Comercial",
+      "other": "Otro"
+    }
+  },
+  "events": {
+    "timeline": "Línea de Tiempo",
+    "logEvent": "Registrar Evento",
+    "log": "Registrar",
+    "newEvent": "Nuevo Evento",
+    "title": "Título",
+    "titlePlaceholder": "Reparación de grifo",
+    "date": "Fecha",
+    "cost": "Costo ($)",
+    "costPlaceholder": "150.00",
+    "category": "Categoría",
+    "status": "Estado",
+    "description": "Descripción",
+    "descriptionPlaceholder": "Detalles sobre la reparación o cambio...",
+    "noEvents": "No hay eventos registrados aún",
+    "categories": {
+      "plumbing": "Plomería",
+      "electrical": "Eléctrico",
+      "structural": "Estructural",
+      "hvac": "HVAC",
+      "painting": "Pintura",
+      "landscaping": "Jardinería",
+      "appliances": "Electrodomésticos",
+      "general": "General",
+      "other": "Otro"
+    },
+    "statuses": {
+      "planned": "Planificado",
+      "in-progress": "En Progreso",
+      "completed": "Completado"
+    }
+  },
+  "common": {
+    "save": "Guardar",
+    "saving": "Guardando...",
+    "cancel": "Cancelar",
+    "create": "Crear",
+    "creating": "Creando...",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "loading": "Cargando...",
+    "appName": "Property Historical"
+  }
+}
