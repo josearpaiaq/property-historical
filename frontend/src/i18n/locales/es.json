@@ -49,6 +49,7 @@
     "noAddress": "Sin dirección",
     "noProperties": "Aún no hay propiedades. ¡Agrega la primera!",
     "purchased": "Comprada",
+    "deleteConfirm": "Esto eliminará permanentemente esta propiedad y todos sus eventos, archivos y recordatorios.",
     "types": {
       "house": "Casa",
       "apartment": "Apartamento",
@@ -98,6 +99,28 @@
     "delete": "Eliminar",
     "edit": "Editar",
     "loading": "Cargando...",
-    "appName": "Property Historical"
+    "appName": "Property Historical",
+    "today": "Hoy",
+    "clear": "Limpiar"
+  },
+  "attachments": {
+    "title": "Archivos",
+    "upload": "Subir",
+    "uploading": "Subiendo...",
+    "download": "Descargar",
+    "noFiles": "Sin archivos adjuntos"
+  },
+  "reminders": {
+    "title": "Recordatorios",
+    "add": "Agregar",
+    "new": "Nuevo Recordatorio",
+    "reminderTitle": "Título",
+    "titlePlaceholder": "Cambiar filtro HVAC",
+    "frequency": "Frecuencia",
+    "nextDue": "Próxima fecha",
+    "noReminders": "Sin recordatorios",
+    "noRemindersHint": "Configura recordatorios para mantenimiento recurrente",
+    "markComplete": "Marcar como completado",
+    "paused": "Pausado"
   }
 }

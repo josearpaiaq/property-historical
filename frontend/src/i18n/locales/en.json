@@ -49,6 +49,7 @@
     "noAddress": "No address",
     "noProperties": "No properties yet. Add your first one!",
     "purchased": "Purchased",
+    "deleteConfirm": "This will permanently delete this property and all its events, attachments, and reminders.",
     "types": {
       "house": "House",
       "apartment": "Apartment",
@@ -98,6 +99,28 @@
     "delete": "Delete",
     "edit": "Edit",
     "loading": "Loading...",
-    "appName": "Property Historical"
+    "appName": "Property Historical",
+    "today": "Today",
+    "clear": "Clear"
+  },
+  "attachments": {
+    "title": "Attachments",
+    "upload": "Upload",
+    "uploading": "Uploading...",
+    "download": "Download",
+    "noFiles": "No files attached"
+  },
+  "reminders": {
+    "title": "Reminders",
+    "add": "Add Reminder",
+    "new": "New Reminder",
+    "reminderTitle": "Title",
+    "titlePlaceholder": "Change HVAC filter",
+    "frequency": "Frequency",
+    "nextDue": "Next Due",
+    "noReminders": "No reminders set",
+    "noRemindersHint": "Set up recurring maintenance reminders to stay on top of things",
+    "markComplete": "Mark as completed",
+    "paused": "Paused"
   }
 }
