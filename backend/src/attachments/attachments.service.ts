@@ -23,8 +23,7 @@ export class AttachmentsService {
     const accessKeyId = this.configService.get<string>('AWS_ACCESS_KEY_ID');
     const secretAccessKey = this.configService.get<string>('AWS_SECRET_ACCESS_KEY');
 
-    // If explicit credentials are provided, use them (local dev)
-    // Otherwise, rely on IAM role credentials (ECS Fargate)
+    // Explicit credentials required (Railway doesn't have IAM roles)
     const s3Config: Record<string, unknown> = { region };
     if (accessKeyId && secretAccessKey) {
       s3Config.credentials = { accessKeyId, secretAccessKey };
