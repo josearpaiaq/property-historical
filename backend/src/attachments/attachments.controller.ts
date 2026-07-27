@@ -18,6 +18,14 @@ import { CurrentUser, AuthUser } from '../auth/decorators/current-user.decorator
 export class AttachmentsController {
   constructor(private readonly attachmentsService: AttachmentsService) {}
 
+  @Get('events/:eventId/attachments')
+  findByEvent(
+    @CurrentUser() user: AuthUser,
+    @Param('eventId', ParseUUIDPipe) eventId: string,
+  ) {
+    return this.attachmentsService.findByEvent(user.id, eventId);
+  }
+
   @Post('events/:eventId/attachments')
   createUploadUrl(
     @CurrentUser() user: AuthUser,

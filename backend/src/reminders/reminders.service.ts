@@ -88,17 +88,18 @@ export class RemindersService {
     return { message: 'Reminder deleted successfully' };
   }
 
-  async complete(userId: string, id: string) {
+  async complete(userId: string, id: string, completedAt?: string) {
     const reminder = await this.findOne(userId, id);
 
-    const now = new Date();
-    const nextDueAt = new Date(now.getTime() + reminder.frequencyDays * 24 * 60 * 60 * 1000);
+    // Use provided date or current time
+    const completionDate = completedAt ? new Date(completedAt) : new Date();
+    const nextDueAt = new Date(completionDate.getTime() + reminder.frequencyDays * 24 * 60 * 60 * 1000);
 
     // Update reminder
     const [updatedReminder] = await this.db
       .update(reminders)
       .set({
-        lastCompletedAt: now,
+        lastCompletedAt: completionDate,
         nextDueAt,
       })
       .where(eq(reminders.id, id))
@@ -111,7 +112,7 @@ export class RemindersService {
         propertyId: reminder.propertyId,
         title: `Completed: ${reminder.title}`,
         description: reminder.description || `Recurring maintenance completed`,
-        date: now.toISOString().split('T')[0],
+        date: completionDate.toISOString().split('T')[0],
         category: 'general',
         status: 'completed',
       })

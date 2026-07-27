@@ -34,6 +34,17 @@ export class AttachmentsService {
     this.bucket = this.configService.getOrThrow<string>('AWS_S3_BUCKET');
   }
 
+  async findByEvent(userId: string, eventId: string) {
+    // Verify event ownership
+    await this.eventsService.findOne(userId, eventId);
+
+    return this.db
+      .select()
+      .from(attachments)
+      .where(eq(attachments.eventId, eventId))
+      .orderBy(attachments.createdAt);
+  }
+
   async createUploadUrl(userId: string, eventId: string, dto: CreateAttachmentDto) {
     // Verify event ownership
     await this.eventsService.findOne(userId, eventId);

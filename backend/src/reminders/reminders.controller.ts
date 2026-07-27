@@ -58,7 +58,8 @@ export class RemindersController {
   complete(
     @CurrentUser() user: AuthUser,
     @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: { completedAt?: string },
   ) {
-    return this.remindersService.complete(user.id, id);
+    return this.remindersService.complete(user.id, id, body?.completedAt);
   }
 }
