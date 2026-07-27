@@ -1,27 +1,33 @@
 import { Sun, Moon, Monitor } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Select, SelectTrigger, SelectContent, SelectItem } from '@/components/ui/select';
 import { useThemeStore, Theme } from '@/stores/theme-store';
 
-const themeConfig: Record<Theme, { icon: typeof Sun; label: string; next: Theme }> = {
-  system: { icon: Monitor, label: 'System theme', next: 'light' },
-  light: { icon: Sun, label: 'Light theme', next: 'dark' },
-  dark: { icon: Moon, label: 'Dark theme', next: 'system' },
+const themeIcons: Record<Theme, typeof Sun> = {
+  system: Monitor,
+  light: Sun,
+  dark: Moon,
 };
 
 export function ThemeToggle() {
   const { theme, setTheme } = useThemeStore();
-  const config = themeConfig[theme];
-  const Icon = config.icon;
+  const Icon = themeIcons[theme];
 
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      onClick={() => setTheme(config.next)}
-      title={config.label}
-      aria-label={config.label}
-    >
-      <Icon className="h-4 w-4" />
-    </Button>
+    <Select value={theme} onValueChange={(val) => setTheme(val as Theme)}>
+      <SelectTrigger className="h-8 w-8 px-0 justify-center border-0 bg-transparent [&>svg:last-child]:hidden">
+        <Icon className="h-4 w-4" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="system">
+          <span className="flex items-center gap-2"><Monitor className="h-3.5 w-3.5" /> System</span>
+        </SelectItem>
+        <SelectItem value="light">
+          <span className="flex items-center gap-2"><Sun className="h-3.5 w-3.5" /> Light</span>
+        </SelectItem>
+        <SelectItem value="dark">
+          <span className="flex items-center gap-2"><Moon className="h-3.5 w-3.5" /> Dark</span>
+        </SelectItem>
+      </SelectContent>
+    </Select>
   );
 }
