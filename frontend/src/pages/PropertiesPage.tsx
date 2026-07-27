@@ -1,32 +1,31 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Pencil } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useProperties, useCreateProperty, useDeleteProperty } from '@/hooks/use-properties';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { useConfirm } from '@/hooks/use-confirm';
+import { useProperties, useDeleteProperty, Property } from '@/hooks/use-properties';
+import { PropertyFormModal } from '@/components/PropertyFormModal';
+import { formatDateShort } from '@/lib/dates';
 
 export function PropertiesPage() {
   const { t } = useTranslation();
   const { data: properties, isLoading } = useProperties();
-  const createProperty = useCreateProperty();
   const deleteProperty = useDeleteProperty();
-  const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({ name: '', address: '', type: '' });
+  const { dialogProps, confirm } = useConfirm();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingProperty, setEditingProperty] = useState<Property | null>(null);
 
-  const handleCreate = (e: React.FormEvent) => {
-    e.preventDefault();
-    createProperty.mutate(
-      { name: formData.name, address: formData.address || undefined, type: formData.type || undefined },
-      {
-        onSuccess: () => {
-          setFormData({ name: '', address: '', type: '' });
-          setShowForm(false);
-        },
-      },
-    );
+  const handleNew = () => {
+    setEditingProperty(null);
+    setModalOpen(true);
+  };
+
+  const handleEdit = (property: Property) => {
+    setEditingProperty(property);
+    setModalOpen(true);
   };
 
   return (
@@ -36,69 +35,12 @@ export function PropertiesPage() {
           <h1 className="text-2xl md:text-3xl font-bold">{t('properties.title')}</h1>
           <p className="text-muted-foreground text-sm hidden sm:block">{t('properties.subtitle')}</p>
         </div>
-        <Button onClick={() => setShowForm(!showForm)} size="sm" className="shrink-0">
+        <Button onClick={handleNew} size="sm" className="shrink-0">
           <Plus className="h-4 w-4 mr-1 sm:mr-2" />
           <span className="hidden sm:inline">{t('properties.addProperty')}</span>
           <span className="sm:hidden">{t('properties.add')}</span>
         </Button>
       </div>
-
-      {showForm && (
-        <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg">{t('properties.newProperty')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
-                <div className="space-y-2">
-                  <Label htmlFor="name">{t('properties.name')} *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder={t('properties.namePlaceholder')}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="address">{t('properties.address')}</Label>
-                  <Input
-                    id="address"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    placeholder={t('properties.addressPlaceholder')}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="type">{t('properties.type')}</Label>
-                  <select
-                    id="type"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    value={formData.type}
-                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                  >
-                    <option value="">{t('properties.selectType')}</option>
-                    <option value="house">{t('properties.types.house')}</option>
-                    <option value="apartment">{t('properties.types.apartment')}</option>
-                    <option value="land">{t('properties.types.land')}</option>
-                    <option value="commercial">{t('properties.types.commercial')}</option>
-                    <option value="other">{t('properties.types.other')}</option>
-                  </select>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button type="submit" size="sm" disabled={createProperty.isPending}>
-                  {createProperty.isPending ? t('common.creating') : t('common.create')}
-                </Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => setShowForm(false)}>
-                  {t('common.cancel')}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
 
       {isLoading ? (
         <p className="text-muted-foreground">{t('common.loading')}</p>
@@ -106,6 +48,9 @@ export function PropertiesPage() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <p className="text-muted-foreground">{t('properties.noProperties')}</p>
+            <Button size="sm" className="mt-4" onClick={handleNew}>
+              <Plus className="h-4 w-4 mr-2" />{t('properties.addProperty')}
+            </Button>
           </CardContent>
         </Card>
       ) : (
@@ -114,7 +59,7 @@ export function PropertiesPage() {
             <Card key={property.id} className="relative group">
               <Link to={`/properties/${property.id}`}>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base md:text-lg pr-8">{property.name}</CardTitle>
+                  <CardTitle className="text-base md:text-lg pr-16">{property.name}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">{property.address || t('properties.noAddress')}</p>
@@ -125,23 +70,49 @@ export function PropertiesPage() {
                   )}
                   {property.purchaseDate && (
                     <p className="text-xs text-muted-foreground mt-2">
-                      {t('properties.purchased')}: {new Date(property.purchaseDate).toLocaleDateString()}
+                      {t('properties.purchased')}: {formatDateShort(property.purchaseDate)}
                     </p>
                   )}
                 </CardContent>
               </Link>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
-                onClick={() => deleteProperty.mutate(property.id)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              <div className="absolute top-4 right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={(e) => { e.preventDefault(); handleEdit(property); }}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    confirm({
+                      title: t('common.delete') + ' "' + property.name + '"?',
+                      description: t('properties.deleteConfirm'),
+                      confirmLabel: t('common.delete'),
+                      variant: 'destructive',
+                      onConfirm: () => deleteProperty.mutate(property.id),
+                    });
+                  }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
             </Card>
           ))}
         </div>
       )}
+
+      <PropertyFormModal
+        open={modalOpen}
+        onClose={() => { setModalOpen(false); setEditingProperty(null); }}
+        property={editingProperty}
+      />
+      <ConfirmDialog {...dialogProps} cancelLabel={t('common.cancel')} />
     </div>
   );
 }

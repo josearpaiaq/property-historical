@@ -48,6 +48,20 @@ export function useCreateProperty() {
   });
 }
 
+export function useUpdateProperty() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: { name?: string; address?: string; type?: string; purchaseDate?: string; notes?: string } }) => {
+      const res = await api.put<Property>(`/properties/${id}`, data);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
+    },
+  });
+}
+
 export function useDeleteProperty() {
   const queryClient = useQueryClient();
 
