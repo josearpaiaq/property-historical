@@ -1,266 +1,238 @@
-import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Plus, Calendar, DollarSign } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, Plus, Calendar, DollarSign, Pencil, Trash2, Filter, LayoutList, LayoutGrid, Bell } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import { useProperty } from '@/hooks/use-properties';
-import { api } from '@/lib/api';
+import { usePropertyEvents, useUpdateEvent, useDeleteEvent, PropertyEvent } from '@/hooks/use-events';
+import { Timeline } from '@/components/Timeline';
+import { RemindersSection } from '@/components/RemindersSection';
+import { EventFormModal } from '@/components/EventFormModal';
+import { cn } from '@/lib/utils';
+import { formatDateShort } from '@/lib/dates';
 
-interface Event {
-  id: string;
-  propertyId: string;
-  title: string;
-  description: string | null;
-  date: string;
-  cost: string | null;
-  category: string | null;
-  status: string | null;
-  createdAt: string;
-}
-
-function usePropertyEvents(propertyId: string) {
-  return useQuery({
-    queryKey: ['events', propertyId],
-    queryFn: async () => {
-      const res = await api.get<Event[]>(`/properties/${propertyId}/events`);
-      return res.data;
-    },
-    enabled: !!propertyId,
-  });
-}
-
-const categoryColors: Record<string, string> = {
-  plumbing: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  electrical: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-  structural: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-  hvac: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200',
-  painting: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-  landscaping: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-  appliances: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-  general: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
-  other: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
-};
+type ViewMode = 'timeline' | 'grid';
+type Tab = 'events' | 'reminders';
 
 export function PropertyDetailPage() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const { data: property, isLoading: propertyLoading } = useProperty(id!);
   const { data: events, isLoading: eventsLoading } = usePropertyEvents(id!);
-  const queryClient = useQueryClient();
-  const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    date: new Date().toISOString().split('T')[0],
-    cost: '',
-    category: 'general',
-    status: 'completed',
-  });
+  const updateEvent = useUpdateEvent(id!);
+  const deleteEvent = useDeleteEvent(id!);
 
-  const createEvent = useMutation({
-    mutationFn: async (data: typeof formData) => {
-      const res = await api.post(`/properties/${id}/events`, {
-        ...data,
-        cost: data.cost || undefined,
-      });
-      return res.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['events', id] });
-      setShowForm(false);
-      setFormData({
-        title: '',
-        description: '',
-        date: new Date().toISOString().split('T')[0],
-        cost: '',
-        category: 'general',
-        status: 'completed',
-      });
-    },
-  });
+  const initialTab = searchParams.get('tab') === 'reminders' ? 'reminders' : 'events';
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
+  const [viewMode, setViewMode] = useState<ViewMode>('timeline');
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({ category: '', status: '', search: '' });
+  const [eventModalOpen, setEventModalOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<PropertyEvent | null>(null);
 
-  const handleCreateEvent = (e: React.FormEvent) => {
-    e.preventDefault();
-    createEvent.mutate(formData);
+  const filteredEvents = useMemo(() => {
+    if (!events) return [];
+    return events.filter((event) => {
+      if (filters.category && event.category !== filters.category) return false;
+      if (filters.status && event.status !== filters.status) return false;
+      if (filters.search) {
+        const s = filters.search.toLowerCase();
+        if (!event.title.toLowerCase().includes(s) && !event.description?.toLowerCase().includes(s)) return false;
+      }
+      return true;
+    });
+  }, [events, filters]);
+
+  const handleStatusChange = (event: PropertyEvent, newStatus: string) => {
+    updateEvent.mutate({ id: event.id, data: { status: newStatus } });
   };
 
-  if (propertyLoading) return <p className="text-muted-foreground">{t('common.loading')}</p>;
-  if (!property) return <p>Property not found</p>;
+  const handleEditEvent = (event: PropertyEvent) => {
+    setEditingEvent(event);
+    setEventModalOpen(true);
+  };
+
+  const handleNewEvent = () => {
+    setEditingEvent(null);
+    setEventModalOpen(true);
+  };
+
+  if (propertyLoading) return <p className="text-muted-foreground p-8">{t('common.loading')}</p>;
+  if (!property) return <p className="p-8">Property not found</p>;
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-start gap-3">
         <Button variant="ghost" size="icon" asChild className="shrink-0 mt-1">
-          <Link to="/properties">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
+          <Link to="/properties"><ArrowLeft className="h-4 w-4" /></Link>
         </Button>
         <div className="min-w-0">
           <h1 className="text-2xl md:text-3xl font-bold truncate">{property.name}</h1>
           <p className="text-muted-foreground text-sm">
-            {property.address || t('properties.noAddress')}{' '}
-            {property.type && <span>• {t(`properties.types.${property.type}`)}</span>}
+            {property.address || t('properties.noAddress')}
+            {property.type && <span> • {t(`properties.types.${property.type}`)}</span>}
           </p>
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg md:text-xl font-semibold">{t('events.timeline')}</h2>
-        <Button onClick={() => setShowForm(!showForm)} size="sm">
-          <Plus className="h-4 w-4 mr-1 sm:mr-2" />
-          <span className="hidden sm:inline">{t('events.logEvent')}</span>
-          <span className="sm:hidden">{t('events.log')}</span>
-        </Button>
+      {/* Tabs */}
+      <div className="flex gap-1 border-b">
+        <button
+          onClick={() => setActiveTab('events')}
+          className={cn(
+            'px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px',
+            activeTab === 'events' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground',
+          )}
+        >
+          {t('events.timeline')}
+        </button>
+        <button
+          onClick={() => setActiveTab('reminders')}
+          className={cn(
+            'px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px flex items-center gap-1.5',
+            activeTab === 'reminders' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground',
+          )}
+        >
+          <Bell className="h-3.5 w-3.5" />
+          {t('reminders.title')}
+        </button>
       </div>
 
-      {showForm && (
-        <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg">{t('events.newEvent')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleCreateEvent} className="space-y-4">
-              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="title">{t('events.title')} *</Label>
-                  <Input
-                    id="title"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder={t('events.titlePlaceholder')}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="date">{t('events.date')} *</Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cost">{t('events.cost')}</Label>
-                  <Input
-                    id="cost"
-                    type="number"
-                    step="0.01"
-                    value={formData.cost}
-                    onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
-                    placeholder={t('events.costPlaceholder')}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="category">{t('events.category')}</Label>
-                  <select
-                    id="category"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  >
-                    <option value="plumbing">{t('events.categories.plumbing')}</option>
-                    <option value="electrical">{t('events.categories.electrical')}</option>
-                    <option value="structural">{t('events.categories.structural')}</option>
-                    <option value="hvac">{t('events.categories.hvac')}</option>
-                    <option value="painting">{t('events.categories.painting')}</option>
-                    <option value="landscaping">{t('events.categories.landscaping')}</option>
-                    <option value="appliances">{t('events.categories.appliances')}</option>
-                    <option value="general">{t('events.categories.general')}</option>
-                    <option value="other">{t('events.categories.other')}</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="status">{t('events.status')}</Label>
-                  <select
-                    id="status"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  >
-                    <option value="planned">{t('events.statuses.planned')}</option>
-                    <option value="in-progress">{t('events.statuses.in-progress')}</option>
-                    <option value="completed">{t('events.statuses.completed')}</option>
-                  </select>
-                </div>
+      {activeTab === 'reminders' ? (
+        <RemindersSection propertyId={id!} />
+      ) : (
+      <>
+        {/* Toolbar */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} className={showFilters ? 'bg-accent' : ''}>
+              <Filter className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Filters</span>
+            </Button>
+            <div className="flex border rounded-lg overflow-hidden">
+              <Button variant={viewMode === 'timeline' ? 'default' : 'ghost'} size="sm" className="rounded-none px-2.5" onClick={() => setViewMode('timeline')}>
+                <LayoutList className="h-4 w-4" />
+              </Button>
+              <Button variant={viewMode === 'grid' ? 'default' : 'ghost'} size="sm" className="rounded-none px-2.5" onClick={() => setViewMode('grid')}>
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          <Button size="sm" onClick={handleNewEvent}>
+            <Plus className="h-4 w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">{t('events.logEvent')}</span>
+            <span className="sm:hidden">{t('events.log')}</span>
+          </Button>
+        </div>
+
+        {/* Filters */}
+        {showFilters && (
+          <Card>
+            <CardContent className="py-4">
+              <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
+                <Input placeholder="Search..." value={filters.search} onChange={(e) => setFilters({ ...filters, search: e.target.value })} />
+                <Select value={filters.category || '_all'} onValueChange={(val) => setFilters({ ...filters, category: val === '_all' ? '' : val })}>
+                  <SelectTrigger><SelectValue placeholder={t('events.category') + ' - All'} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_all">{t('events.category')} - All</SelectItem>
+                    {['plumbing','electrical','structural','hvac','painting','landscaping','appliances','general','other'].map(c => (
+                      <SelectItem key={c} value={c}>{t(`events.categories.${c}`)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={filters.status || '_all'} onValueChange={(val) => setFilters({ ...filters, status: val === '_all' ? '' : val })}>
+                  <SelectTrigger><SelectValue placeholder={t('events.status') + ' - All'} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_all">{t('events.status')} - All</SelectItem>
+                    <SelectItem value="planned">{t('events.statuses.planned')}</SelectItem>
+                    <SelectItem value="in-progress">{t('events.statuses.in-progress')}</SelectItem>
+                    <SelectItem value="completed">{t('events.statuses.completed')}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">{t('events.description')}</Label>
-                <textarea
-                  id="description"
-                  className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder={t('events.descriptionPlaceholder')}
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button type="submit" size="sm" disabled={createEvent.isPending}>
-                  {createEvent.isPending ? t('common.saving') : t('common.save')}
-                </Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => setShowForm(false)}>
-                  {t('common.cancel')}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Events Display */}
+        {eventsLoading ? (
+          <p className="text-muted-foreground">{t('common.loading')}</p>
+        ) : filteredEvents.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-16">
+              <Calendar className="h-12 w-12 text-muted-foreground/50 mb-4" />
+              <p className="text-muted-foreground font-medium">{t('events.noEvents')}</p>
+              <Button size="sm" className="mt-4" onClick={handleNewEvent}>
+                <Plus className="h-4 w-4 mr-2" />{t('events.logEvent')}
+              </Button>
+            </CardContent>
+          </Card>
+        ) : viewMode === 'timeline' ? (
+          <Timeline
+            events={filteredEvents}
+            onEdit={handleEditEvent}
+            onDelete={(eventId) => deleteEvent.mutate(eventId)}
+            onStatusChange={handleStatusChange}
+            t={t}
+          />
+        ) : (
+          /* Grid view */
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredEvents.map((event) => {
+              const catColors: Record<string, string> = {
+                plumbing: 'border-l-blue-500', electrical: 'border-l-yellow-500', structural: 'border-l-red-500',
+                hvac: 'border-l-cyan-500', painting: 'border-l-purple-500', landscaping: 'border-l-green-500',
+                appliances: 'border-l-orange-500', general: 'border-l-primary', other: 'border-l-gray-400',
+              };
+              return (
+                <Card key={event.id} className={`border-l-[3px] ${catColors[event.category || 'general']}`}>
+                  <CardContent className="py-4 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="font-semibold text-sm leading-tight">{event.title}</h3>
+                      <div className="flex gap-0.5 shrink-0">
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground" onClick={() => handleEditEvent(event)}>
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => deleteEvent.mutate(event.id)}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                    {event.description && <p className="text-xs text-muted-foreground line-clamp-2">{event.description}</p>}
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />{formatDateShort(event.date)}
+                      </span>
+                      {event.cost && <span className="font-medium flex items-center gap-0.5"><DollarSign className="h-3 w-3" />{Number(event.cost).toFixed(2)}</span>}
+                    </div>
+                    <Select value={event.status || 'planned'} onValueChange={(val) => handleStatusChange(event, val)}>
+                      <SelectTrigger className="h-7 text-[0.65rem] px-2"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="planned">{t('events.statuses.planned')}</SelectItem>
+                        <SelectItem value="in-progress">{t('events.statuses.in-progress')}</SelectItem>
+                        <SelectItem value="completed">{t('events.statuses.completed')}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </>
       )}
 
-      {eventsLoading ? (
-        <p className="text-muted-foreground">{t('common.loading')}</p>
-      ) : events?.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">{t('events.noEvents')}</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-3">
-          {events?.map((event) => (
-            <Card key={event.id}>
-              <CardContent className="flex flex-col sm:flex-row sm:items-center gap-3 py-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <h3 className="font-medium text-sm md:text-base">{event.title}</h3>
-                    {event.category && (
-                      <span className={`px-2 py-0.5 text-xs rounded-full ${categoryColors[event.category] || categoryColors.other}`}>
-                        {t(`events.categories.${event.category}`)}
-                      </span>
-                    )}
-                    {event.status && (
-                      <span className="px-2 py-0.5 text-xs rounded-full bg-secondary">
-                        {t(`events.statuses.${event.status}`)}
-                      </span>
-                    )}
-                  </div>
-                  {event.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">{event.description}</p>
-                  )}
-                </div>
-                <div className="flex sm:flex-col items-center sm:items-end gap-2 sm:gap-0 text-sm shrink-0">
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <Calendar className="h-3 w-3" />
-                    {new Date(event.date).toLocaleDateString()}
-                  </div>
-                  {event.cost && (
-                    <div className="flex items-center gap-1 font-medium">
-                      <DollarSign className="h-3 w-3" />
-                      {Number(event.cost).toFixed(2)}
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+      <EventFormModal
+        open={eventModalOpen}
+        onClose={() => { setEventModalOpen(false); setEditingEvent(null); }}
+        propertyId={id!}
+        event={editingEvent}
+      />
     </div>
   );
 }
