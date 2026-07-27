@@ -83,44 +83,28 @@ aws ecs update-service \
   --region $AWS_REGION \
   --output text > /dev/null 2>&1
 
-echo "   Waiting for new task to start (~60-90s)..."
-sleep 10
+echo "   Waiting for deployment to stabilize (~90-120s)..."
 
-# Poll until a task is RUNNING
-MAX_ATTEMPTS=20
-ATTEMPT=0
-TASK_ARN=""
-while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
-  TASK_ARN=$(aws ecs list-tasks \
-    --cluster $ECS_CLUSTER \
-    --service-name $ECS_SERVICE \
-    --desired-status RUNNING \
-    --region $AWS_REGION \
-    --query "taskArns[0]" \
-    --output text 2>/dev/null)
+# Wait for the service to be stable (new task running, old task stopped)
+aws ecs wait services-stable \
+  --cluster $ECS_CLUSTER \
+  --services $ECS_SERVICE \
+  --region $AWS_REGION 2>/dev/null || true
 
-  if [ "$TASK_ARN" != "None" ] && [ -n "$TASK_ARN" ]; then
-    STATUS=$(aws ecs describe-tasks \
-      --cluster $ECS_CLUSTER \
-      --tasks $TASK_ARN \
-      --region $AWS_REGION \
-      --query "tasks[0].lastStatus" \
-      --output text 2>/dev/null)
+# Get the running task
+TASK_ARN=$(aws ecs list-tasks \
+  --cluster $ECS_CLUSTER \
+  --service-name $ECS_SERVICE \
+  --desired-status RUNNING \
+  --region $AWS_REGION \
+  --query "taskArns[0]" \
+  --output text)
 
-    if [ "$STATUS" = "RUNNING" ]; then
-      break
-    fi
-  fi
-
-  ATTEMPT=$((ATTEMPT + 1))
-  sleep 10
-done
-
-if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
-  echo "   ❌ Timeout waiting for task. Check ECS logs."
+if [ "$TASK_ARN" = "None" ] || [ -z "$TASK_ARN" ]; then
+  echo "   ❌ No running task found. Check ECS logs."
   exit 1
 fi
-echo "   ✓ Task is running"
+echo "   ✓ Deployment stable"
 
 # ---- STEP 5: Get backend IP ----
 echo ""
@@ -144,7 +128,7 @@ echo "   ✓ Backend: http://${BACKEND_IP}:3000"
 echo ""
 echo "🏗️  [6/7] Building frontend..."
 cd "$PROJECT_ROOT/frontend"
-VITE_API_URL="http://${BACKEND_IP}:3000/api" pnpm run build --silent 2>/dev/null
+VITE_API_URL="http://${BACKEND_IP}:3000/api" pnpm run build
 echo "   ✓ Built"
 
 # ---- STEP 7: Upload to S3 + invalidate CloudFront ----
