@@ -6,6 +6,7 @@ import { PropertiesModule } from './properties/properties.module';
 import { EventsModule } from './events/events.module';
 import { AttachmentsModule } from './attachments/attachments.module';
 import { RemindersModule } from './reminders/reminders.module';
+import { HealthController } from './health.controller';
 
 @Module({
   imports: [
@@ -17,5 +18,6 @@ import { RemindersModule } from './reminders/reminders.module';
     AttachmentsModule,
     RemindersModule,
   ],
+  controllers: [HealthController],
 })
 export class AppModule {}
