@@ -1,4 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import i18n from '@/i18n';
 import { api } from '@/lib/api';
 
 export interface Property {
@@ -44,7 +46,9 @@ export function useCreateProperty() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
+      toast.success(i18n.t('toast.propertyCreated'));
     },
+    onError: () => { toast.error(i18n.t('toast.propertyCreateError')); },
   });
 }
 
@@ -58,7 +62,9 @@ export function useUpdateProperty() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
+      toast.success(i18n.t('toast.propertyUpdated'));
     },
+    onError: () => { toast.error(i18n.t('toast.propertyUpdateError')); },
   });
 }
 
@@ -71,6 +77,8 @@ export function useDeleteProperty() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
+      toast.success(i18n.t('toast.propertyDeleted'));
     },
+    onError: () => { toast.error(i18n.t('toast.propertyDeleteError')); },
   });
 }

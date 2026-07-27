@@ -1,4 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import i18n from '@/i18n';
 import { api } from '@/lib/api';
 
 export interface PropertyEvent {
@@ -35,7 +37,9 @@ export function useCreateEvent(propertyId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events', propertyId] });
+      toast.success(i18n.t('toast.eventCreated'));
     },
+    onError: () => { toast.error(i18n.t('toast.eventCreateError')); },
   });
 }
 
@@ -49,7 +53,9 @@ export function useUpdateEvent(propertyId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events', propertyId] });
+      toast.success(i18n.t('toast.eventUpdated'));
     },
+    onError: () => { toast.error(i18n.t('toast.eventUpdateError')); },
   });
 }
 
@@ -62,6 +68,8 @@ export function useDeleteEvent(propertyId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events', propertyId] });
+      toast.success(i18n.t('toast.eventDeleted'));
     },
+    onError: () => { toast.error(i18n.t('toast.eventDeleteError')); },
   });
 }

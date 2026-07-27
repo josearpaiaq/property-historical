@@ -1,4 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import i18n from '@/i18n';
 import { api } from '@/lib/api';
 
 export interface Reminder {
@@ -33,7 +35,9 @@ export function useCreateReminder(propertyId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reminders', propertyId] });
+      toast.success(i18n.t('toast.reminderCreated'));
     },
+    onError: () => { toast.error(i18n.t('toast.reminderCreateError')); },
   });
 }
 
@@ -46,7 +50,9 @@ export function useUpdateReminder(propertyId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reminders', propertyId] });
+      toast.success(i18n.t('toast.reminderUpdated'));
     },
+    onError: () => { toast.error(i18n.t('toast.reminderUpdateError')); },
   });
 }
 
@@ -58,7 +64,9 @@ export function useDeleteReminder(propertyId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reminders', propertyId] });
+      toast.success(i18n.t('toast.reminderDeleted'));
     },
+    onError: () => { toast.error(i18n.t('toast.reminderDeleteError')); },
   });
 }
 
@@ -72,6 +80,8 @@ export function useCompleteReminder(propertyId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reminders', propertyId] });
       queryClient.invalidateQueries({ queryKey: ['events', propertyId] });
+      toast.success(i18n.t('toast.reminderCompleted'));
     },
+    onError: () => { toast.error(i18n.t('toast.reminderCompleteError')); },
   });
 }

@@ -1,4 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import i18n from '@/i18n';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -17,6 +19,10 @@ export function useLogin() {
     },
     onSuccess: (data) => {
       setAuth(data.access_token, data.user);
+      toast.success(i18n.t('toast.loginSuccess', { name: data.user.name }));
+    },
+    onError: () => {
+      toast.error(i18n.t('toast.loginError'));
     },
   });
 }
@@ -31,6 +37,10 @@ export function useRegister() {
     },
     onSuccess: (data) => {
       setAuth(data.access_token, data.user);
+      toast.success(i18n.t('toast.registerSuccess'));
+    },
+    onError: () => {
+      toast.error(i18n.t('toast.registerError'));
     },
   });
 }

@@ -1,4 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import i18n from '@/i18n';
 import { api } from '@/lib/api';
 
 export interface Attachment {
@@ -82,11 +84,15 @@ export function useUploadAttachment(eventId: string) {
 
       return { previous };
     },
+    onSuccess: (attachment) => {
+      toast.success(i18n.t('toast.fileUploaded', { name: attachment.fileName }));
+    },
     onError: (_err, _file, context) => {
       // Rollback on error
       if (context?.previous) {
         queryClient.setQueryData(['attachments', eventId], context.previous);
       }
+      toast.error(i18n.t('toast.fileUploadError'));
     },
     onSettled: () => {
       // Always refetch after mutation settles to get real data
@@ -100,6 +106,9 @@ export function useDownloadAttachment() {
     mutationFn: async (attachmentId: string) => {
       const res = await api.get<DownloadResponse>(`/attachments/${attachmentId}`);
       return res.data;
+    },
+    onError: () => {
+      toast.error(i18n.t('toast.fileDownloadError'));
     },
   });
 }
@@ -119,10 +128,14 @@ export function useDeleteAttachment(eventId: string) {
       );
       return { previous };
     },
+    onSuccess: () => {
+      toast.success(i18n.t('toast.fileDeleted'));
+    },
     onError: (_err, _id, context) => {
       if (context?.previous) {
         queryClient.setQueryData(['attachments', eventId], context.previous);
       }
+      toast.error(i18n.t('toast.fileDeleteError'));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['attachments', eventId] });
