@@ -1,5 +1,11 @@
-# Use this for local development - only runs PostgreSQL
-# Backend runs natively with `pnpm dev:backend`
+# Local development - runs PostgreSQL only
+# Backend and frontend run natively with pnpm
+#
+# Usage:
+#   docker compose -f docker-compose.dev.yml up -d
+#
+# Production uses Neon (serverless PostgreSQL) instead.
+
 services:
   postgres:
     image: postgres:16-alpine
