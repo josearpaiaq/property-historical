@@ -9,7 +9,7 @@ Personal property maintenance tracker — a historical ledger for all repairs, f
 - **State:** TanStack Query (server) + Zustand (client)
 - **Auth:** JWT (bcrypt + passport)
 - **File Storage:** AWS S3 (pre-signed URLs)
-- **Infrastructure:** ECS Fargate + RDS PostgreSQL + S3 + CloudFront
+- **Infrastructure:** Railway (backend) + Vercel (frontend) + Neon (database) + S3 (files)
 
 ## Quick Start (Local Development)
 
@@ -55,7 +55,8 @@ property-historical-app/
 │   │   ├── attachments/    # File upload/download via S3
 │   │   ├── reminders/      # Recurring maintenance reminders
 │   │   └── database/       # Drizzle ORM schema & provider
-│   ├── Dockerfile          # Multi-stage build for ECS
+│   ├── Dockerfile          # Multi-stage build for Railway
+│   ├── railway.toml        # Railway deployment config
 │   └── drizzle.config.ts   # Migration config
 ├── frontend/
 │   ├── src/
@@ -64,12 +65,12 @@ property-historical-app/
 │   │   ├── hooks/          # TanStack Query hooks
 │   │   ├── stores/         # Zustand stores
 │   │   └── lib/            # API client, utilities
+│   ├── vercel.json         # Vercel SPA config
 │   └── vite.config.ts
-├── docker-compose.yml      # Full stack (backend + postgres)
-├── docker-compose.dev.yml  # Only postgres (for local dev)
+├── docker-compose.dev.yml  # PostgreSQL for local development
 └── .github/workflows/
     ├── ci.yml              # Build & lint on PR
-    └── deploy.yml          # Deploy to AWS (ECS + S3)
+    └── deploy.yml          # Deploy to Railway + Vercel
 ```
 
 ## API Endpoints
@@ -119,34 +120,69 @@ All endpoints under `/api` prefix.
 
 ## Deployment
 
-### AWS Infrastructure Needed
-1. **ECR** — Container registry for backend image
-2. **ECS Fargate** — Runs the backend container
-3. **RDS PostgreSQL** — db.t4g.micro, single-AZ
-4. **S3 Bucket** — For file attachments
-5. **S3 Bucket + CloudFront** — For frontend SPA hosting
+### Architecture
 
-### GitHub Secrets Required
 ```
-AWS_ACCESS_KEY_ID
-AWS_SECRET_ACCESS_KEY
-API_URL (e.g., https://api.yourapp.com/api)
-FRONTEND_BUCKET (S3 bucket name)
-CLOUDFRONT_DISTRIBUTION_ID
+┌─────────────┐     ┌──────────────┐     ┌─────────────┐
+│   Vercel    │────▶│   Railway    │────▶│    Neon     │
+│  (Frontend) │     │  (Backend)   │     │ (PostgreSQL) │
+└─────────────┘     └──────┬───────┘     └─────────────┘
+                           │
+                           ▼
+                    ┌─────────────┐
+                    │   AWS S3    │
+                    │ (Attachments)│
+                    └─────────────┘
 ```
 
-### Deploy Manually
+### Service Setup
+
+#### 1. Neon (Database)
+1. Create a project at [neon.tech](https://neon.tech)
+2. Copy the connection string (starts with `postgres://...@...neon.tech/...`)
+3. Set as `DATABASE_URL` in Railway
+
+#### 2. Railway (Backend)
+1. Create a project at [railway.app](https://railway.app)
+2. Connect your GitHub repo, select the `backend/` directory
+3. Set environment variables:
+   - `DATABASE_URL` — Neon connection string
+   - `JWT_SECRET` — secure random string (32+ chars)
+   - `JWT_EXPIRATION` — `7d`
+   - `AWS_REGION` — `us-east-1`
+   - `AWS_S3_BUCKET` — your S3 bucket name
+   - `AWS_ACCESS_KEY_ID` — IAM user key (S3 access only)
+   - `AWS_SECRET_ACCESS_KEY` — IAM user secret
+   - `FRONTEND_URL` — your Vercel URL (for CORS)
+   - `NODE_ENV` — `production`
+   - `PORT` — `3000`
+
+#### 3. Vercel (Frontend)
+1. Import your repo at [vercel.com](https://vercel.com)
+2. Set root directory to `frontend/`
+3. Set environment variable:
+   - `VITE_API_URL` — Railway backend URL + `/api` (e.g. `https://your-app.railway.app/api`)
+
+#### 4. AWS S3 (File Storage)
+Keep your existing S3 bucket. Create an IAM user with only S3 permissions:
+```json
+{
+  "Effect": "Allow",
+  "Action": ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"],
+  "Resource": "arn:aws:s3:::your-bucket-name/*"
+}
+```
+
+### GitHub Secrets (for CI/CD)
+```
+RAILWAY_TOKEN              - Railway project deploy token
+VERCEL_TOKEN               - Vercel personal access token
+```
+
+### Run Migrations on Neon
 ```bash
-# Backend → Docker → ECR → ECS
 cd backend
-docker build -t property-historical-backend .
-docker tag property-historical-backend:latest <ECR_URI>:latest
-docker push <ECR_URI>:latest
-
-# Frontend → S3
-cd frontend
-VITE_API_URL=https://api.yourapp.com/api pnpm run build
-aws s3 sync dist/ s3://your-frontend-bucket --delete
+DATABASE_URL="postgres://...@...neon.tech/neondb?sslmode=require" pnpm run db:migrate
 ```
 
 ## Database Migrations

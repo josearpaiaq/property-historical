@@ -13,9 +13,12 @@ export const DrizzleProvider: Provider = {
   inject: [ConfigService],
   useFactory: (configService: ConfigService) => {
     const databaseUrl = configService.getOrThrow<string>('DATABASE_URL');
+    const isProduction = configService.get('NODE_ENV') === 'production';
+
     const client = (postgres as any).default
-      ? (postgres as any).default(databaseUrl)
-      : (postgres as any)(databaseUrl);
+      ? (postgres as any).default(databaseUrl, { ssl: isProduction ? 'require' : false })
+      : (postgres as any)(databaseUrl, { ssl: isProduction ? 'require' : false });
+
     return drizzle(client, { schema });
   },
 };

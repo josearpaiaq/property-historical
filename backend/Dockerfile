@@ -29,11 +29,14 @@ RUN corepack enable && corepack prepare pnpm@9 --activate
 COPY package.json pnpm-lock.yaml* ./
 RUN pnpm install --prod --no-frozen-lockfile
 
-# Copy built output
+# Copy built output and migrations
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/drizzle ./drizzle
+COPY drizzle.config.ts ./
 
 EXPOSE 3000
 
 ENV NODE_ENV=production
+ENV PORT=3000
 
 CMD ["node", "dist/main"]

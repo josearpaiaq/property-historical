@@ -52,7 +52,7 @@ A personal property maintenance tracker where homeowners can log and track all r
 - **Runtime:** Node.js
 - **Framework:** NestJS
 - **ORM:** Drizzle ORM (type-safe, lightweight, better migration control than Prisma)
-- **Database:** PostgreSQL (via AWS RDS)
+- **Database:** PostgreSQL (via Neon — serverless)
 - **Auth:** JWT-based authentication (simple for single-user, extensible later)
 - **File Storage:** AWS S3 (pre-signed URLs for uploads/downloads)
 
@@ -63,15 +63,12 @@ A personal property maintenance tracker where homeowners can log and track all r
 - **UI:** TailwindCSS + shadcn/ui (accessible, customizable components)
 - **Routing:** React Router v6+
 
-### Infrastructure (AWS)
-- **Backend Hosting:** ECS Fargate (containerized, scales to near-zero, no server management)
-- **Frontend Hosting:** S3 + CloudFront (static SPA hosting, global CDN)
-- **Database:** RDS PostgreSQL (db.t4g.micro — 2 vCPUs, 1 GB RAM)
-- **File Storage:** S3 Standard
-- **DNS:** Route 53 (optional, if custom domain)
-- **CI/CD:** GitHub Actions (build + deploy)
-
-> Note: AWS App Runner was deprecated for new customers as of April 2026. ECS Fargate is the recommended alternative with similar simplicity.
+### Infrastructure
+- **Backend Hosting:** Railway (containerized NestJS, auto-deploys from GitHub)
+- **Frontend Hosting:** Vercel (static SPA hosting, global CDN, auto-deploys)
+- **Database:** Neon (serverless PostgreSQL)
+- **File Storage:** AWS S3 (pre-signed URLs)
+- **CI/CD:** GitHub Actions (build + deploy via Railway CLI and Vercel CLI)
 
 ---
 
@@ -80,7 +77,7 @@ A personal property maintenance tracker where homeowners can log and track all r
 ```
 ┌─────────────────┐         ┌──────────────────┐         ┌─────────────┐
 │  React SPA      │────────▶│  NestJS API      │────────▶│  PostgreSQL │
-│  (S3+CloudFront)│         │  (ECS Fargate)   │         │  (RDS)      │
+│  (Vercel)       │         │  (Railway)       │         │  (Neon)     │
 └─────────────────┘         └──────────────────┘         └─────────────┘
                                      │
                                      ▼
@@ -94,31 +91,22 @@ The backend is a standalone REST API, intentionally decoupled from the frontend 
 
 ---
 
-## Estimated Monthly Cost (AWS)
+## Estimated Monthly Cost
 
 For a single-user, low-traffic personal app:
 
 | Service | Spec | Monthly Cost |
 |---------|------|--------------|
-| RDS PostgreSQL | db.t4g.micro, 20 GB gp3, Single-AZ | ~$15–22/mo (on-demand) |
-| ECS Fargate | 0.25 vCPU, 0.5 GB RAM, low usage | ~$5–10/mo |
+| Neon PostgreSQL | Free tier (0.5 GB storage, 190 compute hours) | $0/mo |
+| Railway | Hobby plan ($5 credit), low usage | ~$0–5/mo |
+| Vercel | Hobby (free) | $0/mo |
 | S3 (file storage) | <5 GB stored, minimal requests | ~$0.12–0.50/mo |
-| S3 + CloudFront (frontend) | Static SPA, low traffic | ~$0.50–1.00/mo (free tier covers most) |
-| Route 53 | 1 hosted zone | $0.50/mo |
-| Data transfer | Minimal | ~$0–1/mo |
-| **Total estimate** | | **~$22–35/mo** |
+| **Total estimate** | | **~$0–5/mo** |
 
-### Cost optimization notes:
-- **RDS Free Tier:** If on a new AWS account (created before July 2025), the first 12 months include 750 hrs/mo of db.t4g.micro — effectively **free for year one**.
-- **After free tier:** Consider Reserved Instances ($8.47/mo for 1-year commitment on db.t4g.micro).
-- **Alternative (cheaper):** Use Neon or Supabase managed Postgres (free tier with generous limits) during development, migrate to RDS for production.
-- **ECS Fargate can be reduced** by using Lambda + API Gateway instead (~$0–3/mo for very low traffic, but adds cold start latency).
-
-### Cheapest viable production setup (~$10–15/mo):
-- RDS db.t4g.micro with 1-year reserved: ~$8.50/mo
-- ECS Fargate (minimal): ~$5/mo
-- S3 + CloudFront: ~$1/mo
-- Route 53: $0.50/mo
+### Cost notes:
+- **Neon Free Tier** includes 0.5 GB storage and auto-suspend after 5 min idle — perfect for personal use.
+- **Railway** gives $5/mo free credit on the Hobby plan. Typical usage for a low-traffic API fits within this.
+- **Vercel Hobby** is free for personal projects with generous limits.
 
 ---
 
