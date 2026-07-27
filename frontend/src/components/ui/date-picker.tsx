@@ -215,11 +215,11 @@ export function DatePicker({ value, onChange, placeholder, required, id }: DateP
               {/* Footer: Today + Clear */}
               <div className="flex items-center justify-between mt-2 pt-2 border-t">
                 <Button variant="ghost" size="sm" className="text-xs" onClick={handleToday}>
-                  {t('today')}
+                  {t('common.today')}
                 </Button>
                 {value && (
                   <Button variant="ghost" size="sm" className="text-xs text-muted-foreground" onClick={handleClear}>
-                    {t('clear')}
+                    {t('common.clear')}
                   </Button>
                 )}
               </div>
