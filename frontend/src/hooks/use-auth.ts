@@ -2,6 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { api } from '@/lib/api';
+import { queryClient } from '@/lib/query-client';
 import { useAuthStore } from '@/stores/auth-store';
 
 interface AuthResponse {
@@ -18,6 +19,7 @@ export function useLogin() {
       return res.data;
     },
     onSuccess: (data) => {
+      queryClient.clear();
       setAuth(data.access_token, data.user);
       toast.success(i18n.t('toast.loginSuccess', { name: data.user.name }));
     },
@@ -36,6 +38,7 @@ export function useRegister() {
       return res.data;
     },
     onSuccess: (data) => {
+      queryClient.clear();
       setAuth(data.access_token, data.user);
       toast.success(i18n.t('toast.registerSuccess'));
     },
